@@ -39,10 +39,12 @@ class graph(object):
 
 #isgraph
 class graph_networkx(DiGraph):
-    def __init__(self, incoming_graph_data=None, node_num=0,label=None, name="",node_feats=[],  **attr):
+    def __init__(self, node_num=0, label=None, name="", incoming_graph_data=None, node_feats=[],  **attr):
         self.nxgraph = None
+        super(graph_networkx, self).__init__(
+            incoming_graph_data=incoming_graph_data, name=name, label=label)
         if incoming_graph_data is not None:
-            super.__init__(incoming_graph_data,name=name,label=label)
+
             self.node_num = self.number_of_nodes
             self.label = label
             self.name = name
@@ -59,6 +61,10 @@ class graph_networkx(DiGraph):
             self.preds = []
             if (node_num > 0):
                 for i in range(node_num):
+                    node_feat=[]
+                    if len(node_feats)>0 and i<len(len(node_feats)):
+                        node_feat= node_feats[i]
+                    self.add_node(i,feature=node_feat)
                     self.features.append([])
                     self.succs.append([])
                     self.preds.append([])
@@ -69,7 +75,7 @@ class graph_networkx(DiGraph):
         self.features.append(feature)
         self.succs.append([])
         self.preds.append([])
-        self.add_node(feature=feature)
+        self.add_node(self.node_num-1, feature=feature)
 
     def add_edge_compat(self, u, v):
         self.succs[u].append(v)
