@@ -2,6 +2,7 @@ import numpy as np
 #import matplotlib.pyplot as plt
 from sklearn.metrics import auc, roc_curve
 from graphnnSiamese import graphnn
+from net_graphnn import graph_networkx, graph
 import json
 
 def get_f_name(DATA, SF, CM, OP, VS):
@@ -26,42 +27,8 @@ def get_f_dict(F_NAME):
                     name_num += 1
     return name_dict
 
-class graph(object):
-    def __init__(self, node_num = 0, label = None, name = None):
-        self.node_num = node_num
-        self.label = label
-        self.name = name
-        self.features = []
-        self.succs = []
-        self.preds = []
-        if (node_num > 0):
-            for i in range(node_num):
-                self.features.append([])
-                self.succs.append([])
-                self.preds.append([])
-                
-    def add_node(self, feature = []):
-        self.node_num += 1
-        self.features.append(feature)
-        self.succs.append([])
-        self.preds.append([])
-        
-    def add_edge(self, u, v):
-        self.succs[u].append(v)
-        self.preds[v].append(u)
 
-    def toString(self):
-        ret = '{} {}\n'.format(self.node_num, self.label)
-        for u in range(self.node_num):
-            for fea in self.features[u]:
-                ret += '{} '.format(fea)
-            ret += str(len(self.succs[u]))
-            for succ in self.succs[u]:
-                ret += ' {}'.format(succ)
-            ret += '\n'
-        return ret
 
-        
 def read_graph(F_NAME, FUNC_NAME_DICT, FEATURE_DIM):
     graphs = []
     classes = []
@@ -75,11 +42,12 @@ def read_graph(F_NAME, FUNC_NAME_DICT, FEATURE_DIM):
                 g_info = json.loads(line.strip())
                 label = FUNC_NAME_DICT[g_info['fname']]
                 classes[label].append(len(graphs))
-                cur_graph = graph(g_info['n_num'], label, g_info['src'])
+                cur_graph = graph_networkx(
+                    g_info['n_num'], label, g_info['src'])
                 for u in range(g_info['n_num']):
                     cur_graph.features[u] = np.array(g_info['features'][u])
                     for v in g_info['succs'][u]:
-                        cur_graph.add_edge(u, v)
+                        cur_graph.add_edge_compat(u, v)
                 graphs.append(cur_graph)
 
     return graphs, classes
@@ -166,7 +134,7 @@ def get_pair(Gs, classes, M, st = -1, output_id = False, load_id = None):
     else:
         pos_ids = load_id[0]
         neg_ids = load_id[1]
-        
+
     M_pos = len(pos_ids)
     M_neg = len(neg_ids)
     M = M_pos + M_neg
@@ -186,7 +154,7 @@ def get_pair(Gs, classes, M, st = -1, output_id = False, load_id = None):
     node1_mask = np.zeros((M, maxN1, maxN1))
     node2_mask = np.zeros((M, maxN2, maxN2))
     y_input = np.zeros((M))
-    
+
     for i in range(M_pos):
         y_input[i] = 1
         g1 = Gs[pos_ids[i][0]]
@@ -199,7 +167,7 @@ def get_pair(Gs, classes, M, st = -1, output_id = False, load_id = None):
             X2_input[i, u, :] = np.array( g2.features[u] )
             for v in g2.succs[u]:
                 node2_mask[i, u, v] = 1
-        
+
     for i in range(M_pos, M_pos + M_neg):
         y_input[i] = -1
         g1 = Gs[neg_ids[i-M_pos][0]]
