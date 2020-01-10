@@ -109,11 +109,10 @@ class sbm_graph_generator:
     def __init__(self,sizes,seed,graph_Bp,graph_Bmu):
         self.sizes = sizes
         self.seed = seed
-        print(len(sizes))
-        print(graph_Bmu.shape)
+
         self.n_nodes = sum(sizes)
         self.n_blocks = len(sizes)
-        self.probs = convert_to_list_of_list(graph_Bmu)
+        self.probs = convert_to_list_of_list(graph_Bp)
         self.graph_Bp = graph_Bp
         self.graph_Bmu = graph_Bmu
         self.tau = [k for k in range(self.n_blocks) for j in range(k)]
