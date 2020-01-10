@@ -108,6 +108,8 @@ def convert_to_list_of_list (SBM_prob_mat):
 class sbm_graph_generator:
     def __init__(self,sizes,seed,graph_Bp,graph_Bmu):
         self.sizes = sizes
+        print(len(sizes))
+        print(graph_Bmu.shape)
         self.n_nodes = sum(sizes)
         self.n_blocks = len(sizes)
         self.probs = convert_to_list_of_list(graph_Bmu)
@@ -116,7 +118,7 @@ class sbm_graph_generator:
         self.tau = [k for k in range(self.n_blocks) for j in range(k)]
 
     def __iter__(self):
-        g = nx.stochastic_block_model(self.sizes,self.probs,seed=0)
+        g = nx.stochastic_block_model(self.sizes,self.probs,seed=self.seed,directed=TRUE)
 
         W = np.zeros((self.n_nodes, self.n_nodes))
         for node_in_sbm_i in self.tau:
