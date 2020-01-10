@@ -1,6 +1,12 @@
-import networkx
+import os
+import sys
+import numpy as np
+import networkx as nx
 from networkx import DiGraph
+from networkx.generators.community import stochastic_block_model as sbm
 
+from numpy.random import poisson as ps
+from networkx import adjacency_matrix as adjmat
 
 class graph(object):
     def __init__(self, node_num=0, label=None, name=None):
@@ -92,3 +98,37 @@ class graph_networkx(DiGraph):
                 ret += ' {}'.format(succ)
             ret += '\n'
         return ret
+
+
+def convert_to_list_of_list (SBM_prob_mat):
+    nrow  = SBM_prob_mat.shape[0]
+    ncol = SBM_prob_mat.shape[1]
+    return [[ SBM_prob_mat[i,j] for i in range(nrow)] for j in range(ncol) ]
+
+class sbm_graph_generator:
+    def __init__(self,sizes,seed,graph_Bp,graph_Bmu):
+        self.sizes = sizes
+        self.n_nodes = sum(sizes)
+        self.n_blocks = len(sizes)
+        self.probs = convert_to_list_of_list(graph_Bmu)
+        self.graph_Bp = graph_Bp
+        self.graph_Bmu = graph_Bmu
+        self.tau = [k for k in range(self.n_blocks) for j in range(k)]
+
+    def __iter__(self):
+        g = nx.stochastic_block_model(self.sizes,self.probs,seed=0)
+
+        W = np.zeros((self.n_nodes, self.n_nodes))
+        for node_in_sbm_i in self.tau:
+            for node_in_sbm_j in self.tau:
+              W[node_in_sbm_i, node_in_sbm_j] = ps(
+                  self.graph_Bp[node_in_sbm_i, node_in_sbm_j], size=1)
+        A = adjmat(g).to_numpy_matrix()
+        A_W = np.multiply(A,W)
+        weighted_g = nx.DiGraph()
+        nonzero_indices = np.argwhere(A_W)
+        weighted_g.add_weighted_edges_from(
+            [ [ (index_pair[0],  index_pair[1], A_W[index_pair]) for index_pair in nonzero_indices ] ] )
+        yield weighted_g
+
+
